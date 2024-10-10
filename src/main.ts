@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { transform } from "@svgr/core";
+import * as path from "path";
 
 const FILE_KEY = process.env.FILE_KEY!;
 const FIGMA_API_KEY = process.env.FIGMA_API_KEY!;
@@ -19,7 +21,7 @@ async function main() {
       },
       {}
     );
-    await saveSvgFiles(imageUrls, childrenDict, savePath);
+    await saveSvgFiles(imageUrls, childrenDict);
   }
 }
 
@@ -27,43 +29,123 @@ main();
 
 async function saveSvgFiles(
   imageUrls: { [key: string]: string },
-  childrenDict: Record<string, any>,
-  savePath: string
+  childrenDict: Record<string, any>
 ) {
-  const fs = require("fs").promises;
-  const path = require("path");
+  // const promises = [];
 
-  for (const [id, url] of Object.entries(imageUrls)) {
+  // for (const [id, url] of Object.entries(imageUrls)) {
+  //   try {
+  //     promises.push(fetchImageFile(url, id));
+  //   } catch (error) {
+  //     console.error(`파일 저장 중 오류 발생 (${id}):`, error);
+  //   }
+  // }
+
+  const promises = Object.entries(imageUrls).map(([id, url]) => {
     try {
-      const response = await fetch(url.toString(), {
-        headers: {
-          "X-FIGMA-TOKEN": FIGMA_API_KEY,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP 오류! 상태: ${response.status}`);
-      }
-
-      const svgCode = await response.text();
-
-      // SVG 코드가 유효한지 확인
-      if (!svgCode.trim().startsWith("<svg")) {
-        console.error(`유효하지 않은 SVG 코드: ${id}`, svgCode);
-        continue;
-      }
-
-      const fileName = `${childrenDict[id].name}.svg`;
-      const filePath = path.join(savePath, fileName);
-
-      await fs.mkdir(savePath, { recursive: true });
-      await fs.writeFile(filePath, svgCode, "utf8");
-
-      console.log(`SVG 파일이 저장되었습니다: ${filePath}`);
+      return fetchImageFile(url, id);
     } catch (error) {
       console.error(`파일 저장 중 오류 발생 (${id}):`, error);
+      throw error;
     }
-  }
+  });
+
+  const awaitedPromises = await Promise.all(promises);
+
+  // const filePromises: Promise<any>[] = [];
+
+  // awaitedPromises.forEach(async ([id, response], _) => {
+  //   if (!response.ok) {
+  //     throw new Error(`HTTP 오류! 상태: ${response.status}`);
+  //   }
+
+  //   const svgCode = await response.text();
+
+  //   if (!svgCode.trim().startsWith("<svg")) {
+  //     console.error(`유효하지 않은 SVG 코드: ${id}`, svgCode);
+  //     return;
+  //   }
+
+  //   const IconName = snakecaseToPascalCase(childrenDict[id].name);
+
+  //   const jsCode = await transform(
+  //     svgCode,
+  //     {
+  //       plugins: [
+  //         "@svgr/plugin-svgo",
+  //         "@svgr/plugin-jsx",
+  //         "@svgr/plugin-prettier",
+  //       ],
+  //       icon: true,
+  //       ref: true,
+  //       typescript: true,
+  //     },
+  //     { componentName: IconName }
+  //   );
+
+  //   filePromises.push(saveToFile(IconName, jsCode));
+  // });
+
+  const filePromises = awaitedPromises.map(async ([id, response]) => {
+    if (!response.ok) {
+      throw new Error(`HTTP 오류! 상태: ${response.status}`);
+    }
+
+    const svgCode = await response.text();
+
+    if (!svgCode.trim().startsWith("<svg")) {
+      console.error(`유효하지 않은 SVG 코드: ${id}`, svgCode);
+      throw new Error(`유효하지 않은 SVG 코드: ${id}`);
+    }
+
+    const IconName = snakecaseToPascalCase(childrenDict[id].name);
+
+    const jsCode = transform.sync(
+      svgCode,
+      {
+        plugins: [
+          "@svgr/plugin-svgo",
+          "@svgr/plugin-jsx",
+          "@svgr/plugin-prettier",
+        ],
+        icon: true,
+        ref: true,
+        typescript: true,
+      },
+      { componentName: IconName }
+    );
+
+    return saveToFile(IconName, jsCode);
+  });
+
+  await Promise.all(filePromises);
+}
+
+async function saveToFile(filePath: string, content: string) {
+  const fs = require("fs").promises;
+  await fs.mkdir(savePath, { recursive: true });
+  await fs.writeFile(path.join(savePath, `${filePath}.tsx`), content);
+}
+
+async function fetchImageFile(
+  url: string,
+  id: string
+): Promise<[string, Response]> {
+  return [
+    id,
+    await fetch(url.toString(), {
+      headers: {
+        "X-FIGMA-TOKEN": FIGMA_API_KEY,
+      },
+    }),
+  ];
+}
+
+function snakecaseToPascalCase(str: string) {
+  return str
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join("");
 }
 
 async function getImageUrlsFrom(

@@ -1,46 +1,72 @@
 import "dotenv/config";
 import { transform } from "@svgr/core";
 import * as path from "path";
+import * as fs from "fs/promises";
 
 const FILE_KEY = process.env.FILE_KEY!;
 const FIGMA_API_KEY = process.env.FIGMA_API_KEY!;
-const savePath = "./icons";
+
+const iconsDir = "./icons";
+const indexPath = "./index.ts";
 
 async function main() {
   const data = await getNodeFromFile("1-2", FILE_KEY);
   const nodes = Object.values(data.nodes);
 
-  for (const node of nodes) {
-    const children = getChildrenNodesFrom(node);
-    const childrenIds = children.map((item) => item.id);
-    const imageUrls = (await getImageUrlsFrom(childrenIds, FILE_KEY)).images;
-    const childrenDict = children.reduce(
-      (acc: Record<string, (typeof children)[number]>, item) => {
-        acc[item.id] = item;
-        return acc;
-      },
-      {}
-    );
-    await saveSvgFiles(imageUrls, childrenDict);
-  }
+  await Promise.all(nodes.map((node) => saveChildrenNodeImagesOf(node)));
+
+  await convertIconFilesToIndexFile(iconsDir, indexPath);
 }
 
 main();
+
+async function saveChildrenNodeImagesOf(node: any) {
+  const children = getChildrenNodesFrom(node);
+  const childrenIds = children.map((item) => item.id);
+  const imageUrls = (await getImageUrlsFrom(childrenIds, FILE_KEY)).images;
+  const childrenDict = createChildrenDictionary(children);
+  await saveSvgFiles(imageUrls, childrenDict);
+}
+
+function createChildrenDictionary(children: any[]) {
+  return children.reduce((acc: Record<string, any>, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {});
+}
+
+async function convertIconFilesToIndexFile(iconDir: string, indexDir: string) {
+  // 아이콘 파일 목록 가져오기
+  const files = await fs.readdir(iconDir);
+
+  // import 문과 export 배열 생성
+  let importStatements = "";
+  const exportArray: string[] = [];
+
+  for (const file of files) {
+    if (file.endsWith(".tsx")) {
+      const componentName = path.basename(file, ".tsx");
+      importStatements += `import ${componentName} from "${iconDir}/${componentName}";\n`;
+      exportArray.push(componentName);
+    }
+  }
+
+  // export 문 생성
+  const exportStatement = `export { ${exportArray.join(",\n")} };`;
+
+  // index.ts 파일 내용 생성
+  const indexContent = `${importStatements}\n${exportStatement}\n`;
+
+  // index.ts 파일 작성
+  await fs.writeFile(indexDir, indexContent);
+
+  console.log("index.ts 파일이 성공적으로 생성되었습니다.");
+}
 
 async function saveSvgFiles(
   imageUrls: { [key: string]: string },
   childrenDict: Record<string, any>
 ) {
-  // const promises = [];
-
-  // for (const [id, url] of Object.entries(imageUrls)) {
-  //   try {
-  //     promises.push(fetchImageFile(url, id));
-  //   } catch (error) {
-  //     console.error(`파일 저장 중 오류 발생 (${id}):`, error);
-  //   }
-  // }
-
   const promises = Object.entries(imageUrls).map(([id, url]) => {
     try {
       return fetchImageFile(url, id);
@@ -51,40 +77,6 @@ async function saveSvgFiles(
   });
 
   const awaitedPromises = await Promise.all(promises);
-
-  // const filePromises: Promise<any>[] = [];
-
-  // awaitedPromises.forEach(async ([id, response], _) => {
-  //   if (!response.ok) {
-  //     throw new Error(`HTTP 오류! 상태: ${response.status}`);
-  //   }
-
-  //   const svgCode = await response.text();
-
-  //   if (!svgCode.trim().startsWith("<svg")) {
-  //     console.error(`유효하지 않은 SVG 코드: ${id}`, svgCode);
-  //     return;
-  //   }
-
-  //   const IconName = snakecaseToPascalCase(childrenDict[id].name);
-
-  //   const jsCode = await transform(
-  //     svgCode,
-  //     {
-  //       plugins: [
-  //         "@svgr/plugin-svgo",
-  //         "@svgr/plugin-jsx",
-  //         "@svgr/plugin-prettier",
-  //       ],
-  //       icon: true,
-  //       ref: true,
-  //       typescript: true,
-  //     },
-  //     { componentName: IconName }
-  //   );
-
-  //   filePromises.push(saveToFile(IconName, jsCode));
-  // });
 
   const filePromises = awaitedPromises.map(async ([id, response]) => {
     if (!response.ok) {
@@ -123,8 +115,8 @@ async function saveSvgFiles(
 
 async function saveToFile(filePath: string, content: string) {
   const fs = require("fs").promises;
-  await fs.mkdir(savePath, { recursive: true });
-  await fs.writeFile(path.join(savePath, `${filePath}.tsx`), content);
+  await fs.mkdir(iconsDir, { recursive: true });
+  await fs.writeFile(path.join(iconsDir, `${filePath}.tsx`), content);
 }
 
 async function fetchImageFile(

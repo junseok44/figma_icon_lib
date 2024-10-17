@@ -114,7 +114,6 @@ async function saveSvgFiles(
 }
 
 async function saveToFile(filePath: string, content: string) {
-  const fs = require("fs").promises;
   await fs.mkdir(iconsDir, { recursive: true });
   await fs.writeFile(path.join(iconsDir, `${filePath}.tsx`), content);
 }

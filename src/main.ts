@@ -7,7 +7,7 @@ const FILE_KEY = process.env.FILE_KEY!;
 const FIGMA_API_KEY = process.env.FIGMA_API_KEY!;
 
 const iconsDir = "./icons";
-const indexPath = "./index.ts";
+const indexPath = "./icons/index.ts";
 
 async function main() {
   const data = await getNodeFromFile("1-2", FILE_KEY);
@@ -46,7 +46,7 @@ async function convertIconFilesToIndexFile(iconDir: string, indexDir: string) {
   for (const file of files) {
     if (file.endsWith(".tsx")) {
       const componentName = path.basename(file, ".tsx");
-      importStatements += `import ${componentName} from "${iconDir}/${componentName}";\n`;
+      importStatements += `import ${componentName} from "./${componentName}";\n`;
       exportArray.push(componentName);
     }
   }

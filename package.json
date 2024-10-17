@@ -1,7 +1,7 @@
 {
   "name": "figma_icon_lib",
   "version": "0.0.3",
-  "main": "./dist/index.js",
+  "main": "./dist/index.mjs",
   "type": "module",
   "files": [
     "dist",
@@ -9,14 +9,19 @@
     "README.md"
   ],
   "exports": {
-    "import": "./dist/index.js",
-    "require": "./dist/index.js",
-    "types": "./dist/index.d.ts"
+    "import": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
+    },
+    "require": {
+      "types": "./dist/cjs/index.d.cts",
+      "default": "./dist/cjs/index.cjs"
+    }
   },
   "scripts": {
     "dev": "vite",
     "start": "npx tsx ./src/main.ts",
-    "build": "npm run start && tsc",
+    "build": "npm run start && tsup",
     "preview": "vite preview"
   },
   "devDependencies": {

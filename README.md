@@ -18,3 +18,12 @@
 ======4단계=======
 
 1. github action을 통해서 스크립트를 실행할 수 있도록 한다.
+
+피그마에서 아이콘 불러오기.
+
+1.1. npx tsx ./src/main.ts
+
+- node, npm
+- tsx (npm i)
+
+  1.2. tsup

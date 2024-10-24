@@ -23,3 +23,11 @@ jobs:
         env:
           FILE_KEY: ${{ secrets.FILE_KEY }}
           FIGMA_API_KEY: ${{ secrets.FIGMA_API_KEY }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: update authors
+          title: "feat: import icons"
+          body: "This PR imports icons from Figma"
+          branch: feat/import-icons

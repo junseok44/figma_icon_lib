@@ -31,3 +31,4 @@ jobs:
           title: "feat: import icons"
           body: "This PR imports icons from Figma"
           branch: feat/import-icons
+          add-paths: "."

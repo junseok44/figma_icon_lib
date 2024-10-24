@@ -1,6 +1,5 @@
 # Logs
 .env
-/icons
 logs
 *.log
 npm-debug.log*

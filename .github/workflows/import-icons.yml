@@ -22,3 +22,6 @@ jobs:
 
       - name: Run main.ts script
         run: npx tsx ./src/main.ts
+        env:
+          FILE_KEY: ${{ secrets.FILE_KEY }}
+          FIGMA_API_KEY: ${{ secrets.FIGMA_API_KEY }}

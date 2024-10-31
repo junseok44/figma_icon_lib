@@ -1,0 +1,31 @@
+import * as React from "react";
+import type { SVGProps } from "react";
+import { Ref, forwardRef } from "react";
+const ScreenLockLandscape = (
+  props: SVGProps<SVGSVGElement>,
+  ref: Ref<SVGSVGElement>
+) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="1em"
+    height="1em"
+    fill="none"
+    viewBox="0 0 24 24"
+    ref={ref}
+    {...props}
+  >
+    <g clipPath="url(#prefix__a)">
+      <path
+        fill="#fff"
+        d="M21 5H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m-2 12H5V7h14zm-9-1h4c.55 0 1-.45 1-1v-3c0-.55-.45-1-1-1v-1a2 2 0 1 0-4 0v1c-.55 0-1 .45-1 1v3c0 .55.45 1 1 1m.8-6c0-.66.54-1.2 1.2-1.2s1.2.54 1.2 1.2v1h-2.4z"
+      />
+    </g>
+    <defs>
+      <clipPath id="prefix__a">
+        <path fill="#fff" d="M0 0h24v24H0z" />
+      </clipPath>
+    </defs>
+  </svg>
+);
+const ForwardRef = forwardRef(ScreenLockLandscape);
+export default ForwardRef;

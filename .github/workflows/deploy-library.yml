@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: 20.11.0
 
+      - name: Install npm dependencies
+        run: npm install
+
       - name: build library
         run: npx tsup
 

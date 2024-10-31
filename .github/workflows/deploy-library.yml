@@ -1,0 +1,36 @@
+# merge될때 -> library deploy되도록.
+
+name: deploy library
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    name: deploy library
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Node.js 설치
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.0
+
+      - name: build library
+        run: npx tsup
+
+      - name: increase version
+        run: |
+          npm version patch
+
+      - name: npm publish
+        run: |
+          npm publish
